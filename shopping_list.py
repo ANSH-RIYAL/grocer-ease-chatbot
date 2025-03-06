@@ -28,3 +28,11 @@ class ShoppingListManager:
             {'$set': {'items': []}}
         )
         return result.acknowledged
+
+    def get_shopping_list(self, user_id):
+        shopping_list_collection = self.db['shopping_list']
+        shopping_list = shopping_list_collection.find_one({'user_id': user_id})
+        if shopping_list:
+            return shopping_list.get('items', [])
+        else:
+            return []
