@@ -13,9 +13,13 @@ genai.configure(api_key=API_KEY)
 # Chat history storage
 chat_history = []
 
+# Load prompts from JSON file
+with open("prompts.json", "r") as file:
+    prompts = json.load(file)
+
 def initialize_model():
     """Initialize and return the Gemini model."""
-    return genai.GenerativeModel("gemini-pro")
+    return genai.GenerativeModel("gemini-1.5-pro")
 
 def get_gemini_response(user_message):
     """Generate a response from Gemini based on user input."""
@@ -40,19 +44,8 @@ def get_gemini_response(user_message):
 
 def extract_ingredients():
     """Extract ingredient names from the chat history."""
-    prompt = (
-        "You are an AI assistant skilled in analyzing conversations and extracting useful information. "
-        "Given a conversation history, identify all the ingredients mentioned throughout the dialogue. "
-        "Extract only the ingredient names, ensuring you include synonyms or variations if present. "
-        "List each ingredient separately without duplicates. If quantities are mentioned, ignore them and focus only on the ingredient names. "
-        "Return the output in the following format: {item_1, item_2, ...}\n\n"
-        "**Example Input:**\n"
-        "User: I'm making pasta. I have tomatoes and garlic, but I need parmesan and olive oil.\n"
-        "Assistant: That sounds great! You might also want some salt and pepper.\n\n"
-        "**Example Output:**\n"
-        "{tomatoes, garlic, parmesan, olive oil, salt, pepper}\n\n"
-        "**Conversation History:**\n"
-    )
+    prompt = prompts["extract_ingredients"]
+
     
     # Convert chat history to formatted string
     conversation_text = "\n".join([f"{msg['role'].capitalize()}: {msg['message']}" for msg in chat_history])
