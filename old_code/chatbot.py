@@ -177,7 +177,7 @@ class ChatBot:
         Conversation History:  
         """)
         
-        conversation_text = self.format_chat_history(chat_history)
+        conversation_text = self.format_chat_history(chat_history) # Cut history to latest 3 entries
         prompt += conversation_text
 
         try:

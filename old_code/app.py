@@ -61,8 +61,8 @@ async def chat(request: ChatRequest):
 
     # Get chatbot response based on categorized type
     try:
-        # bot_response = chatbot.receive_message(user_message, user_id, message_type)
-        bot_response = chatbot.receive_message(user_message, user_id, "Recipe type")
+        bot_response = chatbot.receive_message(user_message, user_id, message_type)
+        # bot_response = chatbot.receive_message(user_message, user_id, "Recipe type")
         logging.info(f"Bot response: {bot_response}")
     except Exception as e:
         logging.error(f"Error generating chatbot response: {e}")
