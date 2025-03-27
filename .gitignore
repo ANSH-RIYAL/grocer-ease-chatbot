@@ -22,8 +22,8 @@ wheels/
 
 # Virtual Environment
 venv/
-env/
 ENV/
+env/
 .env
 
 # IDE
@@ -47,6 +47,8 @@ coverage.xml
 *.py,cover
 .hypothesis/
 
-# Logs
-*.log
-logs/ 
+# Project specific
+old_code/
+.ipynb_checkpoints/
+logs/
+*.log 

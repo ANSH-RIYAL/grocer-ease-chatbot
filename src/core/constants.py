@@ -9,6 +9,58 @@ HEALTH_CHECK_ENDPOINT = f"{API_V1_STR}/health"
 CHAT_COLLECTION = "chat_history"
 SHOPPING_LIST_COLLECTION = "shopping_list"
 
+# Message Categories
+CATEGORIES = {
+    "Recipe type": "a request for recipe instructions or cooking methods",
+    "Item Addition type": "a request to add items to shopping list",
+    "Item Information type": "a question about item details, prices, or availability",
+    "Update Cart type": "a request to modify, remove, or clear shopping list items",
+    "Others": "any other type of message"
+}
+
+CATEGORY_EXAMPLES = {
+    "Recipe type": [
+        "How do I make pasta?",
+        "What's the recipe for chocolate cake?",
+        "Steps to cook rice",
+        "Instructions for making pizza",
+        "How to prepare a sandwich?",
+        "Recipe for tomato soup"
+    ],
+    "Item Addition type": [
+        "Add milk to my shopping list",
+        "Put bread on the list",
+        "I need to buy tomatoes",
+        "Add pasta to cart",
+        "Please add eggs to my list",
+        "Need to buy vegetables"
+    ],
+    "Item Information type": [
+        "What's the price of tomatoes?",
+        "Is milk available?",
+        "Tell me about this pasta brand",
+        "How fresh are the vegetables?",
+        "What's the best bread to buy?",
+        "Which brand of milk is better?"
+    ],
+    "Update Cart type": [
+        "Remove milk from my list",
+        "Delete tomatoes from cart",
+        "Clear my shopping list",
+        "Update quantity of bread",
+        "Take eggs off the list",
+        "Remove all vegetables"
+    ],
+    "Others": [
+        "Hello",
+        "Thank you",
+        "What's the weather?",
+        "How are you?",
+        "Good morning",
+        "See you later"
+    ]
+}
+
 # AI Service Prompts
 CATEGORIZATION_PROMPT = """
 You are an AI assistant that categorizes user messages into one of the following types:
@@ -38,15 +90,6 @@ Instructions:
 
 Conversation History:  
 """
-
-# Message Categories
-VALID_CATEGORIES = [
-    "Recipe type",
-    "Item Addition type",
-    "Item Information type",
-    "Update Cart type",
-    "Others"
-]
 
 # Error Messages
 ERROR_MESSAGES = {

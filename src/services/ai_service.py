@@ -6,12 +6,11 @@ import json
 from src.core.config import settings
 from src.core.logging import get_logger
 from src.core.constants import (
-    CATEGORIZATION_PROMPT,
     INGREDIENT_EXTRACTION_PROMPT,
-    VALID_CATEGORIES,
     ERROR_MESSAGES,
     SUCCESS_MESSAGES
 )
+from src.services.message_classifier import message_classifier
 
 logger = get_logger(__name__)
 
@@ -56,17 +55,7 @@ class AIService:
     
     def categorize_message(self, message: str) -> str:
         """Categorize user message into predefined types."""
-        if not message or not isinstance(message, str):
-            logger.error(ERROR_MESSAGES["INVALID_MESSAGE"])
-            return "Others"
-            
-        try:
-            response = self.generate_response(CATEGORIZATION_PROMPT.format(message))
-            category = response.strip()
-            return category if category in VALID_CATEGORIES else "Others"
-        except Exception as e:
-            logger.error(ERROR_MESSAGES["GENERAL_ERROR"], error=str(e))
-            return "Others"
+        return message_classifier.classify_message(message)
     
     def extract_ingredients(self, chat_history: List[Dict[str, str]]) -> List[str]:
         """Extract ingredients from chat history."""
