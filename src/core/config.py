@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # AI Model Settings
     GEMINI_API_KEY: str
     GEMINI_MODEL_NAME: str = "gemini-1.5-pro"
+    CLASSIFIER_TYPE: str = "bart"  # Options: "bart" or "gemini"
     
     # Logging Settings
     LOG_LEVEL: str = "INFO"
