@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb+srv://grocerEase:pinakisir123@grocerease1.tzatn.mongodb.net/?retryWrites=true&w=majority&appName=GrocerEase1
+      - DB_NAME=chatbot_db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL_NAME=gemini-1.5-pro
+      - CLASSIFIER_TYPE=bart
+      - PREFERENCE_MODEL_TYPE=bart
+      - STRUCTURED_PROMPTING_API_KEY=${STRUCTURED_PROMPTING_API_KEY}
+    volumes:
+      - .:/app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 

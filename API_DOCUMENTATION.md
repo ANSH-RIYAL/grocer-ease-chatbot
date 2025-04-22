@@ -3,6 +3,45 @@
 ## Overview
 The GrocerEase Chatbot API provides a conversational interface for recipe queries, shopping list management, and grocery item information. The API uses FastAPI and follows RESTful principles.
 
+## Docker Setup
+
+### Prerequisites
+- Docker Desktop installed
+- MongoDB Atlas connection string
+- Gemini API key
+- Structured Prompting API key
+
+### Running with Docker
+1. **Start the Application**
+   ```bash
+   # Start in foreground mode (with logs)
+   docker compose up
+
+   # Start in detached mode (background)
+   docker compose up -d
+   ```
+
+2. **Access the API**
+   - Base URL: `http://localhost:8000`
+   - API Version: v1
+   - Full base URL: `http://localhost:8000/api/v1`
+
+3. **Useful Docker Commands**
+   ```bash
+   # View logs
+   docker compose logs
+   docker compose logs -f  # Follow logs
+
+   # Stop the application
+   docker compose down
+
+   # Rebuild and restart
+   docker compose up --build
+
+   # Restart service
+   docker compose restart app
+   ```
+
 ## Base URL
 `http://localhost:8000/api/v1`
 
@@ -173,4 +212,107 @@ The API implements comprehensive error handling:
 4. **Monitoring & Analytics**
    - Request/response metrics
    - Error tracking
-   - Usage analytics 
+   - Usage analytics
+
+## Environment Variables
+
+The following environment variables are required:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| MONGO_URI | MongoDB connection string | mongodb+srv://... |
+| DB_NAME | Database name | chatbot_db |
+| GEMINI_API_KEY | Gemini API key | - |
+| GEMINI_MODEL_NAME | Gemini model name | gemini-1.5-pro |
+| CLASSIFIER_TYPE | Message classifier type | bart |
+| PREFERENCE_MODEL_TYPE | Preference model type | bart |
+| STRUCTURED_PROMPTING_API_KEY | Structured prompting API key | - |
+
+## Testing the API
+
+### Using curl
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Chat endpoint
+curl -X POST http://localhost:8000/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "test_user",
+    "user_message": "I need to buy groceries for making pasta"
+  }'
+
+# Get user preferences
+curl http://localhost:8000/api/v1/preferences/test_user
+```
+
+### Using Postman
+1. Import the following collection:
+   ```json
+   {
+     "info": {
+       "name": "GrocerEase API",
+       "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+     },
+     "item": [
+       {
+         "name": "Health Check",
+         "request": {
+           "method": "GET",
+           "url": "http://localhost:8000/health"
+         }
+       },
+       {
+         "name": "Chat",
+         "request": {
+           "method": "POST",
+           "url": "http://localhost:8000/api/v1/chat",
+           "header": [
+             {
+               "key": "Content-Type",
+               "value": "application/json"
+             }
+           ],
+           "body": {
+             "mode": "raw",
+             "raw": "{\n    \"user_id\": \"test_user\",\n    \"user_message\": \"I need to buy groceries for making pasta\"\n}"
+           }
+         }
+       }
+     ]
+   }
+   ```
+
+## Troubleshooting
+
+### Common Issues
+1. **Container won't start**
+   - Check Docker logs: `docker compose logs app`
+   - Verify environment variables
+   - Check MongoDB connection
+
+2. **API not responding**
+   - Verify container is running: `docker ps`
+   - Check application logs: `docker compose logs app`
+   - Ensure correct port mapping (8000:8000)
+
+3. **Database connection issues**
+   - Verify MongoDB URI
+   - Check network connectivity
+   - Ensure MongoDB Atlas IP whitelist includes your IP
+
+### Debugging Commands
+```bash
+# View container status
+docker ps
+
+# View detailed logs
+docker compose logs app
+
+# Access container shell
+docker compose exec app bash
+
+# Restart services
+docker compose restart app
+``` 

@@ -8,6 +8,7 @@ HEALTH_CHECK_ENDPOINT = f"{API_V1_STR}/health"
 # Database Collections
 CHAT_COLLECTION = "chat_history"
 SHOPPING_LIST_COLLECTION = "shopping_list"
+USER_PREFERENCES_COLLECTION = "user_preferences"
 
 # Message Categories
 CATEGORIES = {

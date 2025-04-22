@@ -8,12 +8,15 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "GrocerEase Chatbot"
     
     # MongoDB Settings
-    MONGO_URI: str
+    MONGO_URI: str = "mongodb://localhost:27017"  # Default for testing
     DB_NAME: str = "chatbot_db"
     
     # AI Model Settings
-    GEMINI_API_KEY: str
+    GEMINI_API_KEY: str = "dummy_key"  # Default for testing
     GEMINI_MODEL_NAME: str = "gemini-1.5-pro"
+    CLASSIFIER_TYPE: str = "bart"  # Options: "bart" or "gemini"
+    PREFERENCE_MODEL_TYPE: str = "bart"  # Options: "bart" or "gemini"
+    STRUCTURED_PROMPTING_API_KEY: str = "dummy_key"  # Default for testing
     
     # Logging Settings
     LOG_LEVEL: str = "INFO"

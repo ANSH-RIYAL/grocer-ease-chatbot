@@ -59,16 +59,29 @@ def test_process_message(chat_service, test_user_id):
         mock_add_items.return_value = True
         mock_get_list.return_value = ["pasta", "tomato"]
         
+        # Test user preferences
+        test_preferences = {"vegetarian": "yes"}
+        
         # Process message
-        response = chat_service.process_message(test_user_id, "How do I make pasta?")
+        response = chat_service.process_message(
+            test_user_id, 
+            "How do I make pasta?",
+            user_preferences=test_preferences
+        )
         
         # Verify response
         assert response['bot_response'] == "Here's a recipe..."
         assert response['shopping_list'] == ["pasta", "tomato"]
+        assert response['preferences'] == test_preferences
         
         # Verify message was stored
         history = chat_service.get_chat_history(test_user_id)
         assert len(history) == 2  # One user message, one bot response
+        
+        # Verify generate_response was called with preferences
+        mock_generate.assert_called_once()
+        call_args = mock_generate.call_args[1]
+        assert call_args['user_preferences'] == test_preferences
 
 def test_error_handling(chat_service, test_user_id):
     """Test error handling in chat operations."""
