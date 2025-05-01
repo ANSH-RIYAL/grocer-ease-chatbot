@@ -11,6 +11,7 @@ from src.core.constants import (
     SUCCESS_MESSAGES
 )
 from src.services.message_classifier import message_classifier
+from src.services.user_preferences import user_preferences
 
 logger = get_logger(__name__)
 
@@ -56,6 +57,16 @@ class AIService:
     def categorize_message(self, message: str) -> str:
         """Categorize user message into predefined types."""
         return message_classifier.classify_message(message)
+    
+    def extract_user_preferences(self, user_id: str, message: str) -> Dict[str, str]:
+        """Extract user preferences from the message."""
+        try:
+            preferences = user_preferences.extract_preferences_from_message(user_id, message)
+            logger.info("Extracted user preferences", user_id=user_id, preferences=preferences)
+            return preferences
+        except Exception as e:
+            logger.error("Error extracting user preferences", user_id=user_id, error=str(e))
+            return {}
     
     def extract_ingredients(self, chat_history: List[Dict[str, str]]) -> List[str]:
         """Extract ingredients from chat history."""

@@ -57,6 +57,10 @@ class ChatService:
             message_type = ai_service.categorize_message(user_message)
             logger.info("Message categorized", user_id=user_id, message_type=message_type)
             
+            # Extract user preferences
+            preferences = ai_service.extract_user_preferences(user_id, user_message)
+            logger.info("User preferences extracted", user_id=user_id, preferences=preferences)
+            
             # Get chat history
             chat_history = self.get_chat_history(user_id)
             
@@ -76,14 +80,16 @@ class ChatService:
             
             return {
                 'bot_response': bot_response,
-                'shopping_list': shopping_list
+                'shopping_list': shopping_list,
+                'preferences': preferences
             }
             
         except Exception as e:
             logger.error("Error processing message", user_id=user_id, error=str(e))
             return {
                 'bot_response': "I apologize, but I encountered an error processing your message. Please try again.",
-                'shopping_list': []
+                'shopping_list': [],
+                'preferences': {}
             }
 
 # Create a singleton instance
