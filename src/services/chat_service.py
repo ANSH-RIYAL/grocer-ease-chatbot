@@ -50,22 +50,23 @@ class ChatService:
             logger.error("Error retrieving chat history", user_id=user_id, error=str(e))
             return []
     
-    def process_message(self, user_id: str, user_message: str) -> Dict[str, any]:
+    def process_message(self, user_id: str, user_message: str, user_preferences: Dict[str, str]) -> Dict[str, any]:
         """Process a user message and return bot response with updated shopping list."""
         try:
             # Categorize message
             message_type = ai_service.categorize_message(user_message)
             logger.info("Message categorized", user_id=user_id, message_type=message_type)
             
-            # Extract user preferences
-            preferences = ai_service.extract_user_preferences(user_id, user_message)
-            logger.info("User preferences extracted", user_id=user_id, preferences=preferences)
-            
             # Get chat history
             chat_history = self.get_chat_history(user_id)
             
-            # Generate response
-            bot_response = ai_service.generate_response(user_message, chat_history,message_type)
+            # Generate response with user preferences
+            bot_response = ai_service.generate_response(
+                user_message, 
+                chat_history,
+                message_type,
+                user_preferences=user_preferences
+            )
             
             # Store the message
             self.store_message(user_id, user_message, bot_response)
@@ -81,7 +82,7 @@ class ChatService:
             return {
                 'bot_response': bot_response,
                 'shopping_list': shopping_list,
-                'preferences': preferences
+                'preferences': user_preferences
             }
             
         except Exception as e:

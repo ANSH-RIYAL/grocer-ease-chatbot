@@ -1,9 +1,9 @@
 import pytest
-from typing import Generator
+from typing import Generator, Dict
 from fastapi.testclient import TestClient
-from pymongo import MongoClient
 from datetime import datetime
 import os
+from pymongo import MongoClient
 
 from src.api.main import app
 from src.core.config import settings
@@ -29,13 +29,16 @@ def test_db() -> Generator:
 def client(test_db) -> Generator:
     """Create a test client with the test database."""
     # Override the database connection
-    db._client = test_db.client
+    def mock_get_db():
+        return test_db
+    
+    app.dependency_overrides[db.get_db] = mock_get_db
     
     with TestClient(app) as test_client:
         yield test_client
     
     # Restore the original database connection
-    db._client = None
+    app.dependency_overrides.clear()
 
 @pytest.fixture
 def test_user_id() -> str:
@@ -95,4 +98,58 @@ def setup_test_env():
     """Setup test environment variables."""
     os.environ["TESTING"] = "true"
     yield
-    os.environ.pop("TESTING", None) 
+    os.environ.pop("TESTING", None)
+
+@pytest.fixture(scope="function")
+def test_user_preferences() -> Dict[str, str]:
+    """Provide test user preferences."""
+    return {
+        "vegetarian": "yes",
+        "gluten_free": "no",
+        "dairy_free": "not_set"
+    }
+
+@pytest.fixture(scope="function")
+def setup_test_data(test_db, test_user_id, test_user_preferences):
+    """Set up test data in the database."""
+    # Clear existing data
+    test_db.preferences.delete_many({})
+    test_db.chat_history.delete_many({})
+    test_db.shopping_lists.delete_many({})
+    
+    # Insert test preferences
+    test_db.preferences.insert_one({
+        "user_id": test_user_id,
+        "preferences": test_user_preferences
+    })
+    
+    yield
+    
+    # Cleanup after test
+    test_db.preferences.delete_many({})
+    test_db.chat_history.delete_many({})
+    test_db.shopping_lists.delete_many({})
+
+@pytest.fixture(scope="function")
+def mock_ai_service(monkeypatch):
+    """Mock AI service responses."""
+    def mock_generate_response(*args, **kwargs):
+        return "This is a mock response"
+    
+    def mock_categorize_message(*args, **kwargs):
+        return "general"
+    
+    def mock_extract_ingredients(*args, **kwargs):
+        return ["milk", "eggs"]
+    
+    monkeypatch.setattr("src.services.ai_service.AIService.generate_response", mock_generate_response)
+    monkeypatch.setattr("src.services.ai_service.AIService.categorize_message", mock_categorize_message)
+    monkeypatch.setattr("src.services.ai_service.AIService.extract_ingredients", mock_extract_ingredients)
+
+@pytest.fixture(scope="function")
+def mock_database_connection(monkeypatch, test_db):
+    """Mock database connection."""
+    def mock_get_db():
+        return test_db
+    
+    monkeypatch.setattr("src.core.database.get_database", mock_get_db) 

@@ -13,7 +13,6 @@ from src.core.constants import (
 from src.core.message_contexts import MESSAGE_CONTEXTS
 from src.core.prompt_safety import PromptSafety
 from src.services.message_classifier import message_classifier
-from src.services.user_preferences import user_preferences
 
 logger = get_logger(__name__)
 
@@ -40,7 +39,8 @@ class AIService:
         self,
         prompt: str,
         chat_history: Optional[List[Dict[str, str]]] = None,
-        message_type: str = "Others"
+        message_type: str = "Others",
+        user_preferences: Optional[Dict[str, str]] = None
     ) -> str:
         """Generate a response from the AI model."""
         if not prompt or not isinstance(prompt, str):
@@ -60,6 +60,14 @@ class AIService:
             # Get the context for the message type
             context = MESSAGE_CONTEXTS.get(message_type, MESSAGE_CONTEXTS["Others"])
             
+            # Format user preferences if available
+            preferences_text = ""
+            if user_preferences:
+                preferences_text = "\nUser Preferences:\n" + "\n".join(
+                    f"- {pref}: {value}" for pref, value in user_preferences.items()
+                    if value != "not_set"
+                )
+            
             # Format the context into the prompt with safety guidelines
             enhanced_prompt = f"""
             {context['persona']}
@@ -70,6 +78,8 @@ class AIService:
             References to consider:
             {chr(10).join(f"- {ref}" for ref in context['references'])}
             
+            {preferences_text}
+            
             Chat History:
             {self._format_chat_history(chat_history) if chat_history else 'No previous conversation.'}
             
@@ -77,7 +87,7 @@ class AIService:
             
             {PromptSafety.add_safety_context("")}
             
-            Please provide a helpful response considering the above context and references.
+            Please provide a helpful response considering the above context, references, and user preferences.
             """
             
             response = self.model.generate_content(enhanced_prompt)
@@ -108,16 +118,6 @@ class AIService:
     def categorize_message(self, message: str) -> str:
         """Categorize user message into predefined types."""
         return message_classifier.classify_message(message)
-    
-    def extract_user_preferences(self, user_id: str, message: str) -> Dict[str, str]:
-        """Extract user preferences from the message."""
-        try:
-            preferences = user_preferences.extract_preferences_from_message(user_id, message)
-            logger.info("Extracted user preferences", user_id=user_id, preferences=preferences)
-            return preferences
-        except Exception as e:
-            logger.error("Error extracting user preferences", user_id=user_id, error=str(e))
-            return {}
     
     def extract_ingredients(self, chat_history: List[Dict[str, str]]) -> List[str]:
         """Extract ingredients from chat history."""
