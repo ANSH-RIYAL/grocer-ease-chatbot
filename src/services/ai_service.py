@@ -10,6 +10,8 @@ from src.core.constants import (
     ERROR_MESSAGES,
     SUCCESS_MESSAGES
 )
+from src.core.message_contexts import MESSAGE_CONTEXTS
+from src.core.prompt_safety import PromptSafety
 from src.services.message_classifier import message_classifier
 from src.services.user_preferences import user_preferences
 
@@ -37,7 +39,8 @@ class AIService:
     def generate_response(
         self,
         prompt: str,
-        chat_history: Optional[List[Dict[str, str]]] = None
+        chat_history: Optional[List[Dict[str, str]]] = None,
+        message_type: str = "Others"
     ) -> str:
         """Generate a response from the AI model."""
         if not prompt or not isinstance(prompt, str):
@@ -45,14 +48,62 @@ class AIService:
             raise ValueError(ERROR_MESSAGES["INVALID_PROMPT"])
             
         try:
-            response = self.model.generate_content(prompt)
+            # Validate and sanitize the prompt
+            validation_results = PromptSafety.validate_prompt(prompt, message_type)
+            if not validation_results['is_safe']:
+                logger.warning(f"Prompt validation failed: {validation_results['violations']}")
+                return PromptSafety.get_safe_response('prohibited_content')
+            
+            # Sanitize the prompt
+            sanitized_prompt = PromptSafety.sanitize_prompt(prompt)
+            
+            # Get the context for the message type
+            context = MESSAGE_CONTEXTS.get(message_type, MESSAGE_CONTEXTS["Others"])
+            
+            # Format the context into the prompt with safety guidelines
+            enhanced_prompt = f"""
+            {context['persona']}
+            
+            Task: {context['task']}
+            Context: {context['context']}
+            
+            References to consider:
+            {chr(10).join(f"- {ref}" for ref in context['references'])}
+            
+            Chat History:
+            {self._format_chat_history(chat_history) if chat_history else 'No previous conversation.'}
+            
+            User Message: {sanitized_prompt}
+            
+            {PromptSafety.add_safety_context("")}
+            
+            Please provide a helpful response considering the above context and references.
+            """
+            
+            response = self.model.generate_content(enhanced_prompt)
             if not response or not response.text:
                 logger.error(ERROR_MESSAGES["EMPTY_RESPONSE"])
                 raise ValueError(ERROR_MESSAGES["EMPTY_RESPONSE"])
+                
+            # Validate the response
+            response_validation = PromptSafety.validate_prompt(response.text, message_type)
+            if not response_validation['is_safe']:
+                logger.warning(f"Response validation failed: {response_validation['violations']}")
+                return PromptSafety.get_safe_response('prohibited_content')
+                
             return response.text.strip()
         except Exception as e:
             logger.error(ERROR_MESSAGES["GENERAL_ERROR"], error=str(e))
             raise
+    
+    def _format_chat_history(self, chat_history: List[Dict[str, str]]) -> str:
+        """Format chat history into a readable string."""
+        formatted_history = []
+        for msg in chat_history:
+            role = msg.get('role', 'unknown')
+            message = msg.get('message', '')
+            formatted_history.append(f"{role.capitalize()}: {message}")
+        return "\n".join(formatted_history)
     
     def categorize_message(self, message: str) -> str:
         """Categorize user message into predefined types."""

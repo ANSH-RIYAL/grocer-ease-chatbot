@@ -65,7 +65,7 @@ class ChatService:
             chat_history = self.get_chat_history(user_id)
             
             # Generate response
-            bot_response = ai_service.generate_response(user_message, chat_history)
+            bot_response = ai_service.generate_response(user_message, chat_history,message_type)
             
             # Store the message
             self.store_message(user_id, user_message, bot_response)
