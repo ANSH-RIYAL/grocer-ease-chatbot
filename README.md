@@ -1,87 +1,155 @@
 # GrocerEase Chatbot
 
-A smart chatbot service that helps users with recipes, shopping lists, and grocery-related queries.
+A conversational AI-powered chatbot that helps users manage their grocery shopping lists, find recipes, and get information about grocery items.
 
 ## Features
 
-- Natural language processing using Google's Gemini AI
-- Recipe recommendations with ingredients and instructions
-- Automatic shopping list management
-- Chat history tracking
-- RESTful API interface
+- 🤖 Conversational interface for grocery shopping
+- 📝 Automatic shopping list management
+- 🍳 Recipe suggestions and instructions
+- 💰 Price and availability information
+- 🔄 Real-time updates and synchronization
+- 🎯 Personalized recommendations
 
-## Prerequisites
+## Quick Start with Docker
 
-- Python 3.8+
-- MongoDB Atlas account
-- Google Gemini API key
+### Prerequisites
+- Docker Desktop installed
+- MongoDB Atlas connection string
+- Gemini API key
+- Structured Prompting API key
 
-## Installation
+### Running with Docker
 
-1. Clone the repository:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/grocer-ease-chatbot.git
+   cd grocer-ease-chatbot
+   ```
+
+2. **Start the application**
+   ```bash
+   # Start in foreground mode (with logs)
+   docker compose up
+
+   # Or start in detached mode (background)
+   docker compose up -d
+   ```
+
+3. **Access the API**
+   - Base URL: `http://localhost:8000`
+   - API Documentation: `http://localhost:8000/docs`
+   - Health Check: `http://localhost:8000/health`
+
+## Development Setup
+
+### 1. Environment Setup
 ```bash
-git clone https://github.com/yourusername/grocer-ease-chatbot.git
-cd grocer-ease-chatbot
-```
-
-2. Create and activate a virtual environment:
-```bash
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+source venv/bin/activate  # Unix
+.\venv\Scripts\activate   # Windows
 
-3. Install dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-4. Create a `.env` file in the root directory with the following variables:
-```
-MONGO_URI=your_mongodb_uri
+### 2. Configuration
+Create a `.env` file in the root directory with the following variables:
+```env
+MONGO_URI=mongodb+srv://your_mongodb_uri
 DB_NAME=chatbot_db
 GEMINI_API_KEY=your_gemini_api_key
-LOG_LEVEL=INFO
+GEMINI_MODEL_NAME=gemini-1.5-pro
+CLASSIFIER_TYPE=bart
+PREFERENCE_MODEL_TYPE=bart
+STRUCTURED_PROMPTING_API_KEY=your_structured_prompting_api_key
 ```
 
-## Usage
-
-1. Start the application:
+### 3. Running the Application
 ```bash
-python src/main.py
+# Development mode
+uvicorn src.api.main:app --reload --port 8000
+
+# Production mode
+uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 ```
 
-2. The API will be available at `http://localhost:8000`
+## API Usage
 
-3. API Documentation will be available at:
-   - Swagger UI: `http://localhost:8000/docs`
-   - ReDoc: `http://localhost:8000/redoc`
+### Example Requests
 
-## API Endpoints
+1. **Health Check**
+   ```bash
+   curl http://localhost:8000/health
+   ```
 
-### Chat Endpoint
-- **POST** `/api/v1/chat`
-- Request body:
-```json
-{
-    "user_id": "string",
-    "user_message": "string"
-}
+2. **Chat Endpoint**
+   ```bash
+   curl -X POST http://localhost:8000/api/v1/chat \
+     -H "Content-Type: application/json" \
+     -d '{
+       "user_id": "test_user",
+       "user_message": "I need to buy groceries for making pasta"
+     }'
+   ```
+
+3. **Get User Preferences**
+   ```bash
+   curl http://localhost:8000/api/v1/preferences/test_user
+   ```
+
+For detailed API documentation, see [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+
+## Docker Commands
+
+### Basic Commands
+```bash
+# Start services
+docker compose up
+
+# Start in detached mode
+docker compose up -d
+
+# Stop services
+docker compose down
+
+# View logs
+docker compose logs
+docker compose logs -f  # Follow logs
+
+# Rebuild and restart
+docker compose up --build
 ```
-- Response:
-```json
-{
-    "bot_response": "string",
-    "shopping_list": ["string"]
-}
+
+### Troubleshooting
+```bash
+# View container status
+docker ps
+
+# View detailed logs
+docker compose logs app
+
+# Access container shell
+docker compose exec app bash
+
+# Restart services
+docker compose restart app
 ```
 
-### Health Check
-- **GET** `/health`
-- Response:
-```json
-{
-    "status": "healthy"
-}
+## Testing
+
+### Running Tests
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=src tests/
+
+# Run specific test categories
+pytest tests/unit/      # Unit tests
+pytest tests/integration/  # Integration tests
 ```
 
 ## Project Structure
@@ -89,39 +157,16 @@ python src/main.py
 ```
 grocer-ease-chatbot/
 ├── src/
-│   ├── api/
-│   │   └── main.py
-│   ├── core/
-│   │   ├── config.py
-│   │   ├── database.py
-│   │   └── logging.py
-│   ├── services/
-│   │   ├── ai_service.py
-│   │   ├── chat_service.py
-│   │   └── shopping_list_service.py
-│   └── main.py
-├── tests/
-├── .env
-├── requirements.txt
-└── README.md
-```
-
-## Development
-
-### Running Tests
-```bash
-pytest
-```
-
-### Code Formatting
-```bash
-black .
-isort .
-```
-
-### Type Checking
-```bash
-mypy .
+│   ├── api/           # API endpoints
+│   ├── core/          # Core functionality
+│   ├── services/      # Business logic
+│   └── models/        # Data models
+├── tests/             # Test files
+├── scripts/           # Utility scripts
+├── Dockerfile         # Docker configuration
+├── docker-compose.yml # Docker services
+├── requirements.txt   # Python dependencies
+└── README.md         # This file
 ```
 
 ## Contributing
@@ -134,4 +179,15 @@ mypy .
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, please open an issue in the GitHub repository or contact the maintainers.
+
+## Acknowledgments
+
+- FastAPI for the web framework
+- MongoDB for the database
+- Google's Gemini for AI capabilities
+- All contributors and users of the project 
