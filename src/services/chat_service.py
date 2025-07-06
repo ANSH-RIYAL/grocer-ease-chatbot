@@ -71,13 +71,27 @@ class ChatService:
             # Store the message
             self.store_message(user_id, user_message, bot_response)
             
-            # Extract and update ingredients
-            ingredients = ai_service.extract_ingredients(chat_history)
-            if ingredients:
-                shopping_list_service.add_items(user_id, ingredients)
+            # Handle shopping list updates based on message type
+            if message_type == "Item Addition type":
+                # Direct extraction for addition messages
+                ingredients = self._extract_items_from_message(user_message)
+                logger.info("Direct extraction for addition", user_id=user_id, ingredients=ingredients)
+                
+                if ingredients:
+                    success = shopping_list_service.add_items(user_id, ingredients)
+                    logger.info("Added items to shopping list", user_id=user_id, success=success)
+            else:
+                # Use AI extraction for other message types
+                ingredients = ai_service.extract_ingredients(chat_history)
+                logger.info("AI extracted ingredients", user_id=user_id, ingredients=ingredients)
+                
+                if ingredients:
+                    success = shopping_list_service.add_items(user_id, ingredients)
+                    logger.info("Added items to shopping list", user_id=user_id, success=success)
             
             # Get updated shopping list
             shopping_list = shopping_list_service.get_shopping_list(user_id)
+            logger.info("Retrieved shopping list", user_id=user_id, items_count=len(shopping_list))
             
             return {
                 'bot_response': bot_response,
@@ -92,6 +106,42 @@ class ChatService:
                 'shopping_list': [],
                 'preferences': {}
             }
+    
+    def _extract_items_from_message(self, message: str) -> List[str]:
+        """Extract items directly from user message for addition requests."""
+        import re
+        
+        # Common food items to look for
+        common_foods = [
+            'milk', 'bread', 'eggs', 'cheese', 'butter', 'yogurt', 'cream',
+            'flour', 'sugar', 'salt', 'pepper', 'oil', 'vinegar', 'sauce',
+            'tomatoes', 'onions', 'garlic', 'potatoes', 'carrots', 'lettuce',
+            'spinach', 'kale', 'cucumber', 'bell peppers', 'mushrooms',
+            'chicken', 'beef', 'pork', 'fish', 'shrimp', 'salmon', 'tuna',
+            'rice', 'pasta', 'noodles', 'beans', 'lentils', 'chickpeas',
+            'apples', 'bananas', 'oranges', 'grapes', 'strawberries',
+            'cereal', 'oatmeal', 'granola', 'nuts', 'seeds', 'honey',
+            'juice', 'soda', 'water', 'coffee', 'tea', 'wine', 'beer'
+        ]
+        
+        message_lower = message.lower()
+        found_items = []
+        
+        # Look for common food items
+        for food in common_foods:
+            if food in message_lower:
+                found_items.append(food)
+        
+        # Also look for patterns like "add X" or "buy X"
+        add_patterns = re.findall(r'add\s+(\w+)', message_lower)
+        buy_patterns = re.findall(r'buy\s+(\w+)', message_lower)
+        need_patterns = re.findall(r'need\s+(\w+)', message_lower)
+        
+        found_items.extend(add_patterns)
+        found_items.extend(buy_patterns)
+        found_items.extend(need_patterns)
+        
+        return list(set(found_items))
 
 # Create a singleton instance
 chat_service = ChatService() 

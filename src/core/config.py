@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     DB_NAME: str = "chatbot_db"
     
     # AI Model Settings
-    GEMINI_API_KEY: str = "dummy_key"  # Default for testing
-    GEMINI_MODEL_NAME: str = "gemini-1.5-pro"
+    GEMINI_API_KEY: str = "AIzaSyD4PRV5vHdCy8kWr9WiQUbZ4I-p0r4sTCc"  # Default for testing
+    GEMINI_MODEL_NAME: str = "gemini-2.0-flash"
     CLASSIFIER_TYPE: str = "bart"  # Options: "bart" or "gemini"
     PREFERENCE_MODEL_TYPE: str = "bart"  # Options: "bart" or "gemini"
     STRUCTURED_PROMPTING_API_KEY: str = "dummy_key"  # Default for testing

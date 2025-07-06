@@ -53,3 +53,7 @@ old_code/
 .ipynb_checkpoints/
 logs/
 *.log 
+ref/chatbot.py
+ref/structured_prompting.py
+ref/chatbot.py
+ref/structured_prompting.py

@@ -60,7 +60,7 @@ Create a `.env` file in the root directory with the following variables:
 MONGO_URI=mongodb+srv://your_mongodb_uri
 DB_NAME=chatbot_db
 GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL_NAME=gemini-1.5-pro
+GEMINI_MODEL_NAME=gemini-2.0-flash
 CLASSIFIER_TYPE=bart
 PREFERENCE_MODEL_TYPE=bart
 STRUCTURED_PROMPTING_API_KEY=your_structured_prompting_api_key

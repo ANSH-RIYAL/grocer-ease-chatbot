@@ -126,14 +126,28 @@ class AIService:
             return []
             
         try:
+            # Get the most recent user message to extract ingredients from
+            recent_messages = chat_history[-2:] if len(chat_history) >= 2 else chat_history
             conversation_text = "\n".join([
                 f"{msg['role'].capitalize()}: {msg['message']}"
-                for msg in chat_history
+                for msg in recent_messages
                 if isinstance(msg, dict) and 'role' in msg and 'message' in msg
             ])
-            prompt = INGREDIENT_EXTRACTION_PROMPT + conversation_text
-
-            response = self.generate_response(prompt)
+            
+            # Create a more specific prompt for ingredient extraction
+            extraction_prompt = f"""
+            Extract food items and ingredients from the following conversation.
+            Focus on items that should be added to a shopping list.
+            
+            Return ONLY a JSON array of item names, like: ["milk", "bread", "eggs"]
+            
+            Conversation:
+            {conversation_text}
+            
+            JSON array of items:
+            """
+            
+            response = self.generate_response(extraction_prompt)
             # Clean up response by removing extra characters
             cleaned_response = response.strip().lstrip("```").rstrip("```").strip()
             
@@ -141,8 +155,9 @@ class AIService:
                 # Try to parse as JSON first
                 ingredients = json.loads(cleaned_response)
             except json.JSONDecodeError:
-                # If JSON parsing fails, try eval as fallback
-                ingredients = eval(cleaned_response)
+                # If JSON parsing fails, try to extract items manually
+                logger.warning("JSON parsing failed, attempting manual extraction")
+                ingredients = self._manual_ingredient_extraction(conversation_text)
                 
             # Validate and clean ingredients
             if not isinstance(ingredients, list):
@@ -161,6 +176,42 @@ class AIService:
         except Exception as e:
             logger.error(ERROR_MESSAGES["GENERAL_ERROR"], error=str(e))
             return []
+    
+    def _manual_ingredient_extraction(self, text: str) -> List[str]:
+        """Manually extract ingredients from text as fallback."""
+        import re
+        
+        # Common food items to look for
+        common_foods = [
+            'milk', 'bread', 'eggs', 'cheese', 'butter', 'yogurt', 'cream',
+            'flour', 'sugar', 'salt', 'pepper', 'oil', 'vinegar', 'sauce',
+            'tomatoes', 'onions', 'garlic', 'potatoes', 'carrots', 'lettuce',
+            'spinach', 'kale', 'cucumber', 'bell peppers', 'mushrooms',
+            'chicken', 'beef', 'pork', 'fish', 'shrimp', 'salmon', 'tuna',
+            'rice', 'pasta', 'noodles', 'beans', 'lentils', 'chickpeas',
+            'apples', 'bananas', 'oranges', 'grapes', 'strawberries',
+            'cereal', 'oatmeal', 'granola', 'nuts', 'seeds', 'honey',
+            'juice', 'soda', 'water', 'coffee', 'tea', 'wine', 'beer'
+        ]
+        
+        text_lower = text.lower()
+        found_items = []
+        
+        # Look for common food items
+        for food in common_foods:
+            if food in text_lower:
+                found_items.append(food)
+        
+        # Also look for patterns like "add X" or "buy X"
+        add_patterns = re.findall(r'add\s+(\w+)', text_lower)
+        buy_patterns = re.findall(r'buy\s+(\w+)', text_lower)
+        need_patterns = re.findall(r'need\s+(\w+)', text_lower)
+        
+        found_items.extend(add_patterns)
+        found_items.extend(buy_patterns)
+        found_items.extend(need_patterns)
+        
+        return list(set(found_items))
 
 # Create a singleton instance
 ai_service = AIService() 

@@ -223,7 +223,7 @@ The following environment variables are required:
 | MONGO_URI | MongoDB connection string | mongodb+srv://... |
 | DB_NAME | Database name | chatbot_db |
 | GEMINI_API_KEY | Gemini API key | - |
-| GEMINI_MODEL_NAME | Gemini model name | gemini-1.5-pro |
+| GEMINI_MODEL_NAME | Gemini model name | gemini-2.0-flash |
 | CLASSIFIER_TYPE | Message classifier type | bart |
 | PREFERENCE_MODEL_TYPE | Preference model type | bart |
 | STRUCTURED_PROMPTING_API_KEY | Structured prompting API key | - |
