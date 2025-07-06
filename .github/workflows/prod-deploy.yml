@@ -1,0 +1,22 @@
+name: Deploy to Railway Production
+
+on:
+  push:
+    branches:
+      - prodDeploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service ${{ secrets.RAILWAY_SERVICE }} 

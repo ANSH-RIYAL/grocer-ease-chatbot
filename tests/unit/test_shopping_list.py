@@ -1,41 +1,20 @@
-import random
-from config import MONGO_URI, DB_NAME
-from database import get_db_connection
-from shopping_list import ShoppingListManager
+import pytest
+from src.core.config import settings
+from src.services.shopping_list_service import ShoppingListService
 
-def main():
-    db = get_db_connection(MONGO_URI, DB_NAME)
-    shopping_list_manager = ShoppingListManager(db)
-    
-    user_ids = [f"user_{i}" for i in range(1, 6)]
-    item_ids = [f"item_{i}" for i in range(1, 11)]
-    
-    for _ in range(10):
-        user_id = random.choice(user_ids)
-        operation = random.choice(["add", "delete", "clear"])
-        
-        if operation == "add":
-            items_to_add = random.sample(item_ids, random.randint(1, len(item_ids)))
-            print(f"Adding items {items_to_add} to user {user_id}'s shopping list.")
-            if shopping_list_manager.add_items(user_id, items_to_add):
-                print("Items successfully added.")
-            else:
-                print("Failed to add items.")
-        
-        elif operation == "delete":
-            items_to_delete = random.sample(item_ids, random.randint(1, len(item_ids)))
-            print(f"Deleting items {items_to_delete} from user {user_id}'s shopping list.")
-            if shopping_list_manager.delete_items(user_id, items_to_delete):
-                print("Items successfully deleted.")
-            else:
-                print("Failed to delete items.")
-        
-        elif operation == "clear":
-            print(f"Clearing shopping list for user {user_id}.")
-            if shopping_list_manager.clear_shopping_list(user_id):
-                print("Shopping list successfully cleared.")
-            else:
-                print("Failed to clear shopping list.")
+def test_shopping_list_service_initialization():
+    """Test that the shopping list service can be initialized."""
+    service = ShoppingListService()
+    assert service is not None
 
-if __name__ == "__main__":
-    main()
+def test_config_loading():
+    """Test that configuration can be loaded."""
+    assert settings.DB_NAME == "chatbot_db"
+    assert settings.MONGO_URI is not None
+
+def test_service_attributes():
+    """Test that the service has the expected attributes."""
+    service = ShoppingListService()
+    assert hasattr(service, 'collection')
+    assert hasattr(service, 'add_items')
+    assert hasattr(service, 'get_shopping_list')

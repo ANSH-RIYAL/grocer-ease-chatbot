@@ -15,7 +15,6 @@ tenacity==8.2.3
 structlog==24.1.0
 transformers==4.37.2
 torch==2.2.0
-tf-keras==2.15.1
 
 # Testing dependencies
 pytest-cov==4.1.0
