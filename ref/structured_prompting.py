@@ -19,7 +19,7 @@ with open("prompts.json", "r") as file:
 
 def initialize_model():
     """Initialize and return the Gemini model."""
-    return genai.GenerativeModel("gemini-1.5-pro")
+    return genai.GenerativeModel("gemini-2.0-flash")
 
 def get_gemini_response(user_message):
     """Generate a response from Gemini based on user input."""

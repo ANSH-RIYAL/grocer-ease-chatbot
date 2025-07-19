@@ -11,7 +11,7 @@ class ChatBot:
         self.db = db
         self.api_key = api_key
         genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-pro")  # Initialize model only once
+        self.model = genai.GenerativeModel("gemini-2.0-flash")  # Initialize model only once
 
     def categorize_message(self, user_message):
         """Classify user messages into predefined categories."""
