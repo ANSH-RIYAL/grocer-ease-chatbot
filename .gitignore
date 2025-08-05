@@ -59,3 +59,24 @@ ref/chatbot.py
 ref/structured_prompting.py
 ref/chatbot.py
 ref/structured_prompting.py
+# Deployment & Infrastructure Files
+Dockerfile
+docker-compose.yml
+.dockerignore
+start_integration.sh
+test_integration.py
+
+# Documentation Files (Redundant)
+API_DOCUMENTATION.md
+GEMINI_API_SETUP.md
+INTEGRATION_GUIDE.md
+INTEGRATION_STATUS.md
+README.md
+
+# Reference & Temporary Files
+ref/
+scripts/
+grocer-ease-ui/
+resource_usage_9003.csv
+requirements-test.txt
+.vscode/
