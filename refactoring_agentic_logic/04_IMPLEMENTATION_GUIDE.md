@@ -1,188 +1,212 @@
 # IMPLEMENTATION GUIDE
 
+## Development Rules for Cursor
+
+### Project Structure Constraints
+- **NO folder name changes** - Keep existing src/ structure exactly as is
+- **NO new directories** - Work within api/, services/, core/, models/
+- **Maintain existing patterns** - Follow the same structure as current services
+- **Keep it simple** - Don't over-engineer or add unnecessary abstractions
+
+### Code Organization Rules
+- **Services in /services/** - All business logic goes here
+- **API routes in /api/main.py** - Only route definitions, no business logic
+- **Models in /models/** - Pydantic schemas only
+- **Core in /core/** - Config, database, logging, safety
+- **Keep existing imports** - Don't change import patterns
+
+### Implementation Guidelines
+- **Start simple** - Get basic functionality working first
+- **Add complexity gradually** - Don't build everything at once
+- **Follow existing patterns** - Look at how current services are structured
+- **Keep functions focused** - One clear purpose per function
+- **Use existing error handling** - Follow the same patterns as current code
+
+### AI Service Integration Rules
+- **Use existing AIService patterns** - Don't reinvent the wheel
+- **Keep retry logic** - Maintain existing error handling
+- **Follow prompt safety** - Use existing validation patterns
+- **Don't over-optimize** - Get it working first, optimize later
+
+### Database Rules
+- **Use existing models** - Don't change Pydantic schemas unnecessarily
+- **Follow current patterns** - Use same database connection approach
+- **Keep it simple** - Don't add complex queries unless needed
+
+## Cursor Prompts for Development
+
+### When Adding New Features
+```
+"Add [feature] to [service] following the existing patterns:
+1. Use the same structure as other services in /services/
+2. Keep it simple - get basic functionality working first
+3. Follow existing error handling patterns
+4. Don't change the project structure
+5. Use existing imports and patterns"
+```
+
+### When Modifying Existing Services
+```
+"Enhance [service] to [new functionality]:
+1. Keep the existing structure and patterns
+2. Add new methods without breaking existing ones
+3. Follow the same error handling approach
+4. Don't over-engineer - keep it simple
+5. Maintain compatibility with existing code"
+```
+
+### When Integrating Services
+```
+"Connect [service A] to [service B]:
+1. Use existing integration patterns
+2. Keep the same data flow structure
+3. Don't add unnecessary complexity
+4. Follow existing error handling
+5. Maintain the current API structure"
+```
+
+## Agentic Shopping List Implementation Focus
+
+### **Phase 1: Core Action Tracking (Week 1)**
+```python
+# 1. Enhanced Shopping List Data Structure
+class ShoppingListItem:
+    name: str
+    quantity: int = 1
+    unit: str = ""
+    source: str = "direct_addition"
+    added_at: datetime
+    removed: bool = False
+
+# 2. Action Logging System
+class ActionLogger:
+    def log_action(self, action_type, items, quantity=None, reason=None):
+        # Log action to conversation context
+
+# 3. User Preferences Integration
+user_preferences = {
+    "allergies": ["nut allergy"],
+    "dietary": "",
+    "preferences": []
+}
+```
+
+### **Phase 2: Context Management (Week 2)**
+```python
+# 1. Action Summaries for AI
+def generate_action_summary(conversation_actions, current_list, user_preferences):
+    # Create concise summary for AI context
+    return f"User has {user_preferences['allergies']}. Current list: {current_list}. Recent: {recent_actions}"
+
+# 2. Context-Aware Item Management
+def process_item_request(item, action_type, context):
+    # Check if item was recently removed
+    # Consider user preferences (nut allergy)
+    # Make intelligent decision about adding/removing
+```
+
+### **Phase 3: Intelligent Decision Making (Week 3)**
+```python
+# 1. Smart Item Addition with History
+def add_item_with_context(item, quantity, context):
+    # Check removal history
+    # Consider user preferences
+    # Log action appropriately
+
+# 2. Smart Item Removal with Tracking
+def remove_item_with_tracking(item, reason, context):
+    # Remove from list
+    # Add to removal history
+    # Log removal action
+```
+
+## Specific Implementation Focus
+
+### Shopping List Enhancements
+- **Add action tracking** - Log all add/remove/recipe operations
+- **Add removal history** - Track removed items to prevent re-addition
+- **Add user preferences** - Include allergies and dietary restrictions
+- **Keep existing CRUD** - Don't rewrite, just enhance
+- **Use existing prompts** - Extend current AI prompts
+
+### AI Service Improvements
+- **Enhance existing prompts** - Don't create new prompt systems
+- **Improve extraction** - Better item recognition using current patterns
+- **Add action summaries** - Clean context for AI instead of full history
+- **Keep retry logic** - Maintain existing error handling
+- **Follow existing patterns** - Use same AI service structure
+
+### Context Management
+- **Extend existing context** - Don't rebuild context system
+- **Keep conversation history** - Use existing storage patterns
+- **Add action logging** - Track all user interactions
+- **Don't over-complicate** - Simple context awareness
+
+## What NOT to Do
+
+### Don't Add Unnecessary Complexity
+- ❌ Don't create new testing frameworks
+- ❌ Don't add complex validation layers
+- ❌ Don't create new directory structures
+- ❌ Don't over-engineer simple features
+- ❌ Don't add unnecessary abstractions
+
+### Don't Break Existing Patterns
+- ❌ Don't change import structures
+- ❌ Don't modify existing API responses
+- ❌ Don't rewrite working services
+- ❌ Don't add complex error handling
+- ❌ Don't change database schemas unnecessarily
+
+### Don't Over-Optimize
+- ❌ Don't add caching unless needed
+- ❌ Don't optimize before it's working
+- ❌ Don't add complex monitoring
+- ❌ Don't create elaborate logging
+- ❌ Don't add performance features prematurely
+
+## Simple Development Process
+
+### 1. Start with Basic Functionality
+- Get the core feature working
+- Use existing patterns and structures
+- Keep it simple and focused
+
+### 2. Enhance Gradually
+- Add complexity only when needed
+- Follow existing code patterns
+- Don't over-engineer
+
+### 3. Test Manually
+- Test the feature works
+- Fix obvious issues
+- Don't create elaborate test suites
+
+### 4. Integrate with Existing Code
+- Connect to existing services
+- Follow current integration patterns
+- Maintain compatibility
+
 ## ChatGPT Prompt Templates
-- "Help me define the phases for a chatbot API service that processes grocery shopping requests"
-- "Convert this user story into a SCOPE_DOC Phase plan for agentic logic development"
-- "Generate realistic JSON payload for a chat message requesting to add items to shopping list"
-- "Review and improve the agentic logic flow in our ChatService pipeline"
-- "Design integration patterns for Google Gemini AI service with fallback strategies"
-- "Create testing strategies for AI service failure scenarios"
 
-## Cursor Prompts
+### For Planning Features
+- "What's the simplest way to add action tracking to our existing ShoppingListService?"
+- "How can I enhance the shopping list data structure without changing the project structure?"
+- "What's the minimal change needed to add user preferences to the conversation context?"
 
-### Backend Development
-- "Add a new route in `/src/api/main.py` for processing chat messages"
-- "Implement logic in `/src/services/chat_service.py` to process user messages with agentic intelligence"
-- "Update the AIService to generate better contextual responses using Gemini"
-- "Enhance the MessageClassifier to improve intent recognition accuracy"
-- "Add comprehensive error handling to the ShoppingListService"
-- "Implement input validation for the chat endpoint using Pydantic models"
+### For Implementation Help
+- "Help me add action logging to ShoppingListService following existing patterns"
+- "How do I integrate user preferences with the existing AI service?"
+- "What's the simplest approach to add removal history tracking?"
 
-### Core Logic Implementation
-- "Create a ChatService that handles message processing with context awareness"
-- "Implement AIService with proper retry logic and fallback mechanisms"
-- "Build MessageClassifier with confidence scoring and threshold management"
-- "Add ShoppingListService with CRUD operations and data validation"
-- "Create UserPreferencesService with preference management and integration"
-
-### API Development
-- "Create REST API endpoints for chat processing and user preferences"
-- "Implement request/response validation for chat endpoint"
-- "Add error handling and status codes for all API endpoints"
-- "Create documentation for API endpoints with examples"
-- "Implement health checks and monitoring endpoints"
-
-## Integration Prompts
-
-### Backend-Service Integration
-- "Wire up the ChatService to properly integrate with AIService and ShoppingListService"
-- "Ensure error messages from API are properly formatted and include appropriate status codes"
-- "Test the complete agentic processing pipeline from API request to response"
-- "Connect user preferences to AI response generation"
-
-### Data Flow Integration
-- "Connect ChatService to MessageClassifier with proper error handling"
-- "Integrate AIService with Gemini API using retry mechanisms"
-- "Link ShoppingListService to database with connection pooling"
-- "Create data validation between all service components"
-
-### Error Handling Integration
-- "Implement comprehensive error handling across all endpoints"
-- "Add validation for user input and API requests"
-- "Create fallback mechanisms for AI service failures"
-- "Ensure graceful degradation when external services fail"
+### For Problem Solving
+- "I need to add action tracking but keep it simple - what's the approach?"
+- "How do I enhance the shopping list without over-engineering?"
+- "What's the minimal change to achieve agentic shopping list management?"
 
 ## Override Flags
-- `#COMMERCIAL_FEATURE` → allow use of advanced AI libraries or complex frameworks
-- `#ALLOW_AUTH` → enable user authentication and session management
-- `#IGNORE_STRUCTURE_CONSTRAINTS` → allow folder creation (use sparingly)
-- `#COMPLEX_INTEGRATION` → allow advanced external service integration
-- `#REAL_TIME_FEATURES` → enable WebSocket or complex real-time updates
-- `#ENTERPRISE_FEATURES` → enable advanced features and compliance
-- `#AGENTIC_FOCUS` → prioritize intelligent processing over simple responses
-
-## Specific Implementation Prompts
-
-### For Backend Services
-```
-"Implement [service name] that:
-1. Handles [specific functionality]
-2. Integrates with [external service]
-3. Provides proper error handling
-4. Includes logging and monitoring
-5. Follows the established patterns in /services/
-Use the existing structure and maintain consistency."
-```
-
-### For Agentic Logic
-```
-"Enhance the [service name] to:
-1. Improve context awareness and conversation history
-2. Generate more intelligent responses using Gemini
-3. Handle user preferences in response generation
-4. Provide better fallback mechanisms
-5. Optimize performance and response times
-Maintain the existing API structure and error handling."
-```
-
-### For API Integration
-```
-"Connect [component A] to [component B] by:
-1. Establishing proper data flow
-2. Implementing error handling
-3. Adding validation where needed
-4. Ensuring good user experience
-5. Following established patterns
-Maintain simplicity and avoid over-engineering."
-```
-
-## AI Service Specific Prompts
-- "Optimize prompt engineering for better Gemini responses"
-- "Implement retry logic with exponential backoff for AI service calls"
-- "Add fallback responses when AI service is unavailable"
-- "Enhance context management for multi-turn conversations"
-- "Improve intent classification accuracy with BART model"
-
-## Shopping List Specific Prompts
-- "Enhance item extraction prompts for better shopping list recognition"
-- "Implement smart item removal with fuzzy matching"
-- "Add quantity detection for shopping list items"
-- "Create context-aware shopping list updates"
-- "Improve recipe integration with shopping list management"
-- "Add preference-aware substitutions for dietary restrictions"
-
-## Sample Data Payloads
-
-### Request Example
-```json
-{
-  "user_id": "user123",
-  "user_message": "Add milk and bread to my shopping list"
-}
-```
-
-### Response Example
-```json
-{
-  "bot_response": "I've added milk and bread to your shopping list. Is there anything else you need?",
-  "shopping_list": ["milk", "bread", "eggs", "butter"],
-  "preferences": {
-    "vegetarian": "not_set",
-    "gluten_free": "not_set",
-    "dairy_free": "not_set"
-  }
-}
-```
-
-### Error Response Example
-```json
-{
-  "error": "validation_error",
-  "detail": "User ID and message are required",
-  "status_code": 400
-}
-```
-
-### API Inputs
-- POST requests to `/api/v1/chat` with JSON payload containing user_id and user_message
-- GET requests to `/api/v1/preferences/{user_id}` for retrieving user preferences
-- POST requests to `/api/v1/preferences` for setting user preferences
-- DELETE requests to `/api/v1/preferences/{user_id}` for clearing preferences
-
-## Critical User Flows
-- **User sends message → AI classifies intent → Updates shopping list → Returns response**
-- **User asks for recipe → AI generates recipe with ingredients → Adds ingredients to list**
-- **User provides invalid input → Backend returns clear error message**
-- **User sets preferences → AI considers preferences in future responses**
-- **AI service fails → System provides graceful fallback response**
-
-## Edge Cases
-- **Input Validation:** Empty user_message, missing user_id, very long messages (>1000 characters)
-- **Service Failures:** Gemini API rate limit exceeded, AI service timeout (>30 seconds), malformed AI responses
-- **Performance Limits:** Concurrent user requests, large conversation history, complex recipe generation
-- **Data Corruption:** Invalid JSON payload, corrupted database entries, missing user preferences
-- **Network Issues:** MongoDB connection failures, AI service unavailable, timeout scenarios
-
-## Performance Test Scenarios
-- **Concurrent Users:** 10+ simultaneous chat requests
-- **Large Data Sets:** Users with 50+ conversation history entries
-- **Complex Operations:** Recipe generation with 20+ ingredients
-- **Memory Usage:** Efficient handling of large context windows
-- **Response Times:** < 2 seconds for chat requests, < 5 seconds for complex operations
-
-## Expected Behavior on Failure
-- **Backend:**
-  - HTTP status codes: 400 for validation errors, 500 for server errors, 503 for AI service errors
-  - Error message format: `{"error": "error_type", "detail": "description", "status_code": 400}`
-  - Logging and monitoring: Structured logging with error tracking
-- **API Client:**
-  - Receive clear error message in response
-  - Get appropriate HTTP status code
-  - Fallback response when AI service is unavailable: "I'm having trouble processing that right now. Could you try rephrasing?"
-
-## Quality Assurance Requirements
-- **Testing Strategy:** Unit tests for all services, integration tests for API endpoints, performance tests for AI calls
-- **Error Handling:** Comprehensive error scenarios including AI service failures, database errors, validation errors
-- **Performance Monitoring:** Track response times, AI service latency, database query performance
-- **User Experience:** Ensure helpful error messages, graceful degradation, consistent response format
-- **Security:** Input sanitization, prompt safety validation, secure API key handling 
+- `#KEEP_SIMPLE` → focus on basic functionality, avoid over-engineering
+- `#FOLLOW_PATTERNS` → use existing code structure and patterns
+- `#NO_STRUCTURE_CHANGES` → don't modify project structure
+- `#MINIMAL_CHANGES` → make smallest possible changes
+- `#EXISTING_PATTERNS` → follow current code patterns exactly 

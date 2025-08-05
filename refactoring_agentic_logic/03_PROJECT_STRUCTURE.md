@@ -19,7 +19,7 @@ grocer-ease-chatbot/
 │   ├── services/
 │   │   ├── ai_service.py        # Google Gemini AI integration
 │   │   ├── chat_service.py      # Main message processing pipeline
-│   │   ├── message_classifier.py # BART/Gemini intent classification
+│   │   ├── message_classifier.py # Gemini-based intent classification
 │   │   ├── shopping_list_service.py # Shopping list CRUD operations
 │   │   └── user_preferences.py  # User preference management
 │   └── main.py                  # Application entry point
@@ -57,9 +57,9 @@ grocer-ease-chatbot/
 - ChatService orchestrates the processing pipeline
 - MessageClassifier determines intent (recipe, add item, item info, etc.)
 - AIService generates intelligent responses using Gemini
-- ShoppingListService manages list updates
-- UserPreferencesService handles dietary preferences
-- Context management across conversation history
+- ShoppingListService manages list updates with action tracking
+- UserPreferencesService handles dietary preferences and allergies
+- Context management across conversation history with action summaries
 
 ## Current API Endpoints
 - `POST /api/v1/chat` - Chat processing with JSON request/response
@@ -68,7 +68,9 @@ grocer-ease-chatbot/
 - `DELETE /api/v1/preferences/{user_id}` - Clear user preferences
 - `GET /health` - Health check endpoint
 
-## Current Data Models
+## Enhanced Data Models
+
+### **Current Data Models**
 ```json
 // Chat Message
 {
@@ -78,21 +80,80 @@ grocer-ease-chatbot/
   "timestamp": "datetime"
 }
 
-// Shopping List Item
+// Shopping List Item (Enhanced)
 {
   "name": "string",
   "quantity": "integer",
-  "unit": "string"
+  "unit": "string",
+  "source": "direct_addition|recipe_suggestion",
+  "added_at": "datetime",
+  "removed": "boolean"
 }
 
-// User Preferences
+// User Preferences (Enhanced)
 {
   "user_id": "string",
   "preferences": {
     "vegetarian": "yes/no/not_set",
     "gluten_free": "yes/no/not_set",
-    "dairy_free": "yes/no/not_set"
+    "dairy_free": "yes/no/not_set",
+    "allergies": ["nut allergy", "shellfish"],
+    "dietary": "vegetarian|vegan|none",
+    "restrictions": []
   }
+}
+```
+
+### **New Agentic Data Structures**
+```json
+// Shopping List State
+{
+  "user_id": "string",
+  "items": [
+    {
+      "name": "apples",
+      "quantity": 2,
+      "unit": "pieces",
+      "source": "direct_addition",
+      "added_at": "2024-01-15T10:30:00Z",
+      "removed": false
+    }
+  ],
+  "removed_items": [
+    {
+      "name": "tomatoes",
+      "removed_at": "2024-01-15T10:31:00Z",
+      "reason": "user_request"
+    }
+  ],
+  "action_history": [
+    {
+      "type": "item_addition",
+      "items": ["apples"],
+      "quantity": 2,
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "last_updated": "datetime"
+}
+
+// Conversation Context
+{
+  "user_id": "string",
+  "current_flow": "recipe_shopping|direct_shopping",
+  "active_recipe": "lasagna|null",
+  "user_preferences": {
+    "dietary": "vegetarian",
+    "allergies": ["nut allergy"],
+    "preferences": ["no_dairy"]
+  },
+  "recent_actions": [
+    {
+      "type": "recipe_request",
+      "recipe": "lasagna",
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  ]
 }
 ```
 
@@ -101,13 +162,6 @@ grocer-ease-chatbot/
 - **500 Internal Server Error**: Server-side processing errors
 - **Graceful Degradation**: Fallback responses for service failures
 - **Structured Logging**: Error tracking and monitoring
-
-## Current Testing Framework
-- **Unit Tests**: Individual service and function testing
-- **Integration Tests**: API endpoint testing
-- **Mock Testing**: External dependencies
-- **Database Testing**: Test fixtures and cleanup
-- **Coverage**: Target > 80% code coverage
 
 ## Current Performance Features
 - **Response Time**: < 2 seconds for chat requests
@@ -135,8 +189,8 @@ MONGO_URI=mongodb+srv://...
 DB_NAME=chatbot_db
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL_NAME=gemini-2.0-flash
-CLASSIFIER_TYPE=bart
-PREFERENCE_MODEL_TYPE=bart
+CLASSIFIER_TYPE=gemini
+PREFERENCE_MODEL_TYPE=gemini
 STRUCTURED_PROMPTING_API_KEY=your_structured_prompting_key
 LOG_LEVEL=INFO
 CORS_ORIGINS=["*"]
@@ -146,7 +200,6 @@ CORS_ORIGINS=["*"]
 - **FastAPI**: Web framework
 - **Pymongo**: MongoDB driver
 - **Google Generative AI**: Gemini API integration
-- **Transformers**: BART model for classification
 - **Pydantic**: Data validation
 - **Structlog**: Structured logging
 - **Tenacity**: Retry mechanisms
@@ -162,14 +215,12 @@ CORS_ORIGINS=["*"]
 - **Code Quality**: PEP 8 with Black formatting
 - **Type Hints**: All functions must have type hints
 - **Documentation**: Comprehensive docstrings
-- **Testing**: Unit and integration tests
 - **Error Handling**: Comprehensive error scenarios
 - **Performance**: < 2 second response times
 - **Security**: Input validation and sanitization
 
 ## External Service Integration
-- **Google Gemini AI:** Primary AI service for response generation
-- **BART Model:** Message classification (transformers library)
+- **Google Gemini AI:** Primary AI service for response generation and classification
 - **MongoDB Atlas:** Database for chat history, shopping lists, preferences
 - **Retry Mechanisms:** Exponential backoff for AI service failures
 - **Fallback Strategies:** Graceful degradation when services fail

@@ -1,19 +1,20 @@
 # PROJECT SCOPE
 
 ## One-line Summary
-A conversational AI-powered API service that helps users manage grocery shopping lists through natural language interaction with intelligent response generation.
+A conversational AI-powered API service that helps users manage grocery shopping lists through natural language interaction with intelligent response generation and agentic state management.
 
 ## What We're Building
-- **Functionality Overview:** FastAPI-based chatbot service with intelligent message processing, shopping list management, recipe assistance, and user preference integration
+- **Functionality Overview:** FastAPI-based chatbot service with intelligent message processing, agentic shopping list management, action tracking, and user preference integration
 - **Input Behavior:** JSON POST requests with user_id and user_message for chat processing
 - **Output Behavior:** JSON responses with bot_response, shopping_list, and user preferences
 - **Core Logic Description:** 
   1. Receive user message via API endpoint
-  2. Classify message intent using BART/Gemini classifier
-  3. Generate intelligent response using Google Gemini AI with context
-  4. Update shopping list based on extracted items
-  5. Return response with updated list and preferences
-- **Intelligent Processing:** Context-aware responses, conversation history tracking, user preference integration, and intelligent item extraction
+  2. Classify message intent using Gemini API
+  3. Extract items and actions with context awareness
+  4. Update shopping list state with action tracking
+  5. Generate intelligent response using Google Gemini AI with context
+  6. Return response with updated list and preferences
+- **Agentic Processing:** Context-aware responses, action history tracking, user preference integration, intelligent item extraction, and state management
 
 ## What We're NOT Building
 - Frontend UI components or user interfaces
@@ -41,8 +42,8 @@ A conversational AI-powered API service that helps users manage grocery shopping
 - **Context Management:** State preservation across requests, conversation history tracking
 
 ## External Dependencies
-- **Primary Services:** Google Gemini AI for response generation, MongoDB Atlas for data persistence
-- **Secondary Services:** BART model for message classification, structured prompting API
+- **Primary Services:** Google Gemini AI for response generation and message classification, MongoDB Atlas for data persistence
+- **Secondary Services:** Structured prompting API for enhanced AI interactions
 - **Rate Limits & Costs:** Gemini API usage limits, MongoDB Atlas connection limits
 - **Fallback Strategies:** Manual item extraction when AI fails, graceful degradation responses
 
@@ -58,7 +59,7 @@ A conversational AI-powered API service that helps users manage grocery shopping
 - **Backend Checklist:** 
   - [x] ChatService message processing pipeline
   - [x] AIService Gemini integration with retry logic
-  - [x] MessageClassifier BART/Gemini classification
+  - [x] MessageClassifier Gemini-based classification
   - [x] ShoppingListService CRUD operations
   - [x] UserPreferencesService management
 - **Agentic Logic Checklist:**
@@ -68,29 +69,27 @@ A conversational AI-powered API service that helps users manage grocery shopping
   - [x] Intent classification accuracy
   - [x] Item extraction from messages
 
-### Phase 2: Enhanced Shopping List Agentic Logic
+### Phase 2: Agentic Shopping List Management
 - **Backend Checklist:**
-  - [ ] Enhanced item recognition with AI
-  - [ ] Smart item removal with fuzzy matching
-  - [ ] Quantity management ("2 apples", "3 bags")
-  - [ ] Context-aware shopping list updates
-  - [ ] Improved prompt engineering for shopping
+  - [ ] Enhanced shopping list data structure with action tracking
+  - [ ] Action logging system for add/remove/recipe operations
+  - [ ] User preferences integration (allergies, dietary restrictions)
+  - [ ] Context-aware item management with removal history
+  - [ ] Action summaries for AI context management
 - **Agentic Logic Checklist:**
-  - [ ] Recipe → Shopping list integration
-  - [ ] Smart item addition/removal
-  - [ ] Quantity detection and management
-  - [ ] Context-aware list modifications
-  - [ ] Preference-aware substitutions
+  - [ ] Intelligent item addition with quantity support
+  - [ ] Smart item removal with fuzzy matching and history tracking
+  - [ ] Recipe context management and ingredient tracking
+  - [ ] Context-aware decision making based on action history
+  - [ ] Preference-aware substitutions and suggestions
 
 ### Phase 3: Quality & Optimization
 - **Backend Checklist:**
-  - [ ] Complete unit and integration testing
   - [ ] Performance benchmarking
   - [ ] Production deployment preparation
   - [ ] Comprehensive API documentation
   - [ ] Security hardening
 - **Agentic Logic Checklist:**
-  - [ ] Test all agentic processing scenarios
   - [ ] Validate intelligent response quality
   - [ ] Optimize response generation speed
   - [ ] Ensure reliable error recovery
@@ -99,8 +98,9 @@ A conversational AI-powered API service that helps users manage grocery shopping
 ## Real Data Requirements
 - **Example Data Structures:** 
   - Chat messages: {user_id, user_message, bot_response, timestamp}
-  - Shopping lists: {user_id, items[], last_updated}
-  - User preferences: {user_id, preferences{vegetarian, gluten_free, dairy_free}}
+  - Shopping lists: {user_id, items[], action_history[], last_updated}
+  - User preferences: {user_id, preferences{vegetarian, gluten_free, dairy_free, allergies}}
+  - Action tracking: {action_type, items, quantity, reason, timestamp}
 - **Expected Data Sources:** User input via API, AI-generated responses, database persistence
-- **Data Relationships:** User-centric data model with conversation history and preferences
+- **Data Relationships:** User-centric data model with conversation history, action tracking, and preferences
 - **Data Validation:** Pydantic models for request/response validation, input sanitization 
