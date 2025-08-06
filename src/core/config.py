@@ -13,10 +13,8 @@ class Settings(BaseSettings):
     
     # AI Model Settings
     GEMINI_API_KEY: str = "AIzaSyDat8ktS_PQSuNi8G0KCBMNRufD1Uy8Jqg"  # Default for testing
-    GEMINI_MODEL_NAME: str = "gemini-2.0-flash"
+    GEMINI_MODEL_NAME: str = "gemini-1.5-pro"  # Upgraded for better reasoning
     CLASSIFIER_TYPE: str = "gemini"  # Options: "bart" or "gemini"
-    PREFERENCE_MODEL_TYPE: str = "bart"  # Options: "bart" or "gemini"
-    STRUCTURED_PROMPTING_API_KEY: str = "dummy_key"  # Default for testing
     
     # Logging Settings
     LOG_LEVEL: str = "INFO"
