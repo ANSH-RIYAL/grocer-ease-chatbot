@@ -9,6 +9,7 @@ from src.services.chat_service import chat_service
 from src.services.user_preferences import user_preferences
 from src.services.context_manager import context_manager
 from src.services.shopping_list_service import shopping_list_service
+from src.services.recipe_service import recipe_service
 from src.models.shopping_list import UserPreferences
 
 logger = get_logger(__name__)
@@ -48,6 +49,14 @@ class ContextSummaryResponse(BaseModel):
     context_summary: str
     suggestions: List[str]
 
+class RecipeRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, description="User ID")
+    recipe_query: str = Field(..., min_length=1, description="Recipe request or query")
+
+class SubstitutionRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, description="User ID")
+    item: str = Field(..., min_length=1, description="Item to find substitutions for")
+
 @app.post(f"{settings.API_V1_STR}/chat")
 async def chat(request: ChatRequest) -> Dict[str, Any]:
     """Handle chat requests and return bot response with shopping list."""
@@ -85,6 +94,104 @@ async def chat(request: ChatRequest) -> Dict[str, Any]:
             user_id=request.user_id,
             error=str(e)
         )
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error"
+        )
+
+@app.post(f"{settings.API_V1_STR}/recipe/suggest")
+async def suggest_recipe(request: RecipeRequest) -> Dict[str, Any]:
+    """Suggest a recipe based on user preferences and current shopping list."""
+    try:
+        # Get user preferences
+        user_prefs = user_preferences.get_all_preferences(request.user_id)
+        
+        # Convert to UserPreferences object
+        prefs = UserPreferences()
+        if user_prefs.get("dietary"):
+            prefs.dietary = user_prefs["dietary"]
+        if user_prefs.get("allergies"):
+            prefs.allergies = user_prefs["allergies"].split(",") if isinstance(user_prefs["allergies"], str) else user_prefs["allergies"]
+        
+        # Get current shopping list
+        current_list = shopping_list_service.get_shopping_list(request.user_id)
+        
+        # Get recipe suggestion
+        recipe_result = recipe_service.suggest_recipe(prefs, current_list)
+        
+        return {
+            "user_id": request.user_id,
+            "recipe_suggestion": recipe_result.get("suggestion"),
+            "missing_ingredients": recipe_result.get("missing_ingredients", []),
+            "reason": recipe_result.get("reason", ""),
+            "alternatives": recipe_result.get("alternatives", [])
+        }
+        
+    except Exception as e:
+        logger.error(f"Error suggesting recipe for user {request.user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error"
+        )
+
+@app.post(f"{settings.API_V1_STR}/recipe/generate")
+async def generate_recipe(request: RecipeRequest) -> Dict[str, Any]:
+    """Generate a custom recipe using AI."""
+    try:
+        # Get user preferences
+        user_prefs = user_preferences.get_all_preferences(request.user_id)
+        
+        # Convert to UserPreferences object
+        prefs = UserPreferences()
+        if user_prefs.get("dietary"):
+            prefs.dietary = user_prefs["dietary"]
+        if user_prefs.get("allergies"):
+            prefs.allergies = user_prefs["allergies"].split(",") if isinstance(user_prefs["allergies"], str) else user_prefs["allergies"]
+        
+        # Generate recipe with AI
+        recipe_result = recipe_service.generate_recipe_with_ai(request.recipe_query, prefs)
+        
+        return {
+            "user_id": request.user_id,
+            "recipe": recipe_result.get("suggestion"),
+            "missing_ingredients": recipe_result.get("missing_ingredients", []),
+            "reason": recipe_result.get("reason", ""),
+            "error": recipe_result.get("error")
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating recipe for user {request.user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error"
+        )
+
+@app.post(f"{settings.API_V1_STR}/substitutions")
+async def get_substitutions(request: SubstitutionRequest) -> Dict[str, Any]:
+    """Get substitution suggestions for an item based on user preferences."""
+    try:
+        # Get user preferences
+        user_prefs = user_preferences.get_all_preferences(request.user_id)
+        
+        # Convert to UserPreferences object
+        prefs = UserPreferences()
+        if user_prefs.get("dietary"):
+            prefs.dietary = user_prefs["dietary"]
+        if user_prefs.get("allergies"):
+            prefs.allergies = user_prefs["allergies"].split(",") if isinstance(user_prefs["allergies"], str) else user_prefs["allergies"]
+        
+        # Get substitutions
+        substitutions = recipe_service.suggest_substitutions(request.item, prefs)
+        
+        return {
+            "user_id": request.user_id,
+            "original_item": request.item,
+            "substitutions": substitutions,
+            "reason": f"Based on {prefs.dietary} diet and allergies: {', '.join(prefs.allergies) if prefs.allergies else 'none'}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting substitutions for user {request.user_id}: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail="Internal server error"

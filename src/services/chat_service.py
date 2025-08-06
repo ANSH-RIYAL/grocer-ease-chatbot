@@ -7,6 +7,7 @@ from src.core.logging import get_logger
 from src.services.ai_service import ai_service
 from src.services.shopping_list_service import shopping_list_service
 from src.services.context_manager import context_manager
+from src.services.recipe_service import recipe_service
 from src.models.shopping_list import ShoppingListState, UserPreferences
 
 logger = get_logger(__name__)
@@ -61,6 +62,10 @@ class ChatService:
             message_type = ai_service.categorize_message(user_message)
             logger.info("Message categorized", user_id=user_id, message_type=message_type)
             
+            # Handle recipe requests specially
+            if message_type == "Recipe type":
+                return self._handle_recipe_request(user_id, user_message, user_preferences, shopping_list_state)
+            
             # Get chat history
             chat_history = self.get_chat_history(user_id)
             
@@ -93,6 +98,90 @@ class ChatService:
             logger.error("Error processing message", user_id=user_id, error=str(e))
             return {
                 'bot_response': "I apologize, but I encountered an error processing your message. Please try again.",
+                'shopping_list': [],
+                'preferences': user_preferences
+            }
+
+    def _handle_recipe_request(self, user_id: str, user_message: str, user_preferences: Dict[str, str], 
+                              shopping_list_state: Optional[ShoppingListState]) -> Dict[str, Any]:
+        """Handle recipe requests with intelligent ingredient management."""
+        try:
+            # Convert user preferences to UserPreferences object
+            prefs = UserPreferences()
+            if user_preferences.get("dietary"):
+                prefs.dietary = user_preferences["dietary"]
+            if user_preferences.get("allergies"):
+                prefs.allergies = user_preferences["allergies"].split(",") if isinstance(user_preferences["allergies"], str) else user_preferences["allergies"]
+            
+            # Get current shopping list
+            current_list = shopping_list_service.get_shopping_list(user_id)
+            
+            # Check if user is asking for a specific recipe or general suggestion
+            if any(word in user_message.lower() for word in ["recipe", "cook", "make", "prepare"]):
+                # Generate recipe suggestion
+                recipe_result = recipe_service.suggest_recipe(prefs, current_list)
+                
+                if recipe_result["suggestion"]:
+                    recipe = recipe_result["suggestion"]
+                    missing_ingredients = recipe_result["missing_ingredients"]
+                    
+                    # Add missing ingredients to shopping list
+                    for ingredient in missing_ingredients:
+                        decision = context_manager.should_add_item(user_id, ingredient)
+                        if decision["should_add"]:
+                            shopping_list_service.add_item_with_context(
+                                user_id, ingredient, 1, "recipe_suggestion"
+                            )
+                    
+                    # Generate response
+                    bot_response = f"I suggest making {recipe['name']}! It's {recipe['difficulty']} difficulty and takes {recipe['cook_time']}. I've added the missing ingredients to your shopping list."
+                    
+                    # Log recipe request action
+                    shopping_list_service._log_action(user_id, "recipe_request", [recipe['name']], reason="user_request")
+                    
+                else:
+                    bot_response = "I couldn't find a suitable recipe for your preferences. Try asking for a specific dish or ingredient!"
+                    recipe_result = {"suggestion": None}
+            else:
+                # Try AI-generated recipe
+                recipe_result = recipe_service.generate_recipe_with_ai(user_message, prefs)
+                
+                if recipe_result.get("suggestion"):
+                    recipe = recipe_result["suggestion"]
+                    missing_ingredients = recipe_result["missing_ingredients"]
+                    
+                    # Add ingredients to shopping list
+                    for ingredient in missing_ingredients:
+                        decision = context_manager.should_add_item(user_id, ingredient)
+                        if decision["should_add"]:
+                            shopping_list_service.add_item_with_context(
+                                user_id, ingredient, 1, "ai_recipe"
+                            )
+                    
+                    bot_response = f"Here's a recipe for {recipe['recipe_name']}: {', '.join(recipe['ingredients'])}. I've added the ingredients to your shopping list!"
+                    
+                    # Log recipe request action
+                    shopping_list_service._log_action(user_id, "recipe_request", [recipe['recipe_name']], reason="ai_generated")
+                else:
+                    bot_response = "I couldn't generate a recipe for that. Try asking for something specific like 'pasta recipe' or 'vegetarian dinner'!"
+            
+            # Store the message
+            self.store_message(user_id, user_message, bot_response)
+            
+            # Get updated shopping list
+            shopping_list = shopping_list_service.get_shopping_list(user_id)
+            
+            return {
+                'bot_response': bot_response,
+                'shopping_list': shopping_list,
+                'preferences': user_preferences,
+                'recipe_suggestion': recipe_result.get("suggestion")
+            }
+            
+        except Exception as e:
+            logger.error("Error handling recipe request", user_id=user_id, error=str(e))
+            return {
+                'bot_response': "I apologize, but I encountered an error processing your recipe request. Please try again.",
                 'shopping_list': [],
                 'preferences': user_preferences
             }
