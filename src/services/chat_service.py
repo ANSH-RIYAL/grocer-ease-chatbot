@@ -6,6 +6,7 @@ from src.core.database import db
 from src.core.logging import get_logger
 from src.services.ai_service import ai_service
 from src.services.shopping_list_service import shopping_list_service
+from src.services.context_manager import context_manager
 from src.models.shopping_list import ShoppingListState, UserPreferences
 
 logger = get_logger(__name__)
@@ -53,6 +54,9 @@ class ChatService:
             # Get enhanced shopping list state for context
             shopping_list_state = shopping_list_service.get_shopping_list_state(user_id)
             
+            # Get conversation context
+            conversation_context = context_manager.get_conversation_context(user_id)
+            
             # Categorize message
             message_type = ai_service.categorize_message(user_message)
             logger.info("Message categorized", user_id=user_id, message_type=message_type)
@@ -72,8 +76,8 @@ class ChatService:
             # Store the message
             self.store_message(user_id, user_message, bot_response)
             
-            # Process shopping list updates with context awareness
-            self._process_shopping_list_updates(user_id, user_message, message_type, shopping_list_state)
+            # Process shopping list updates with intelligent decision making
+            self._process_shopping_list_updates_with_context(user_id, user_message, message_type, shopping_list_state)
             
             # Get updated shopping list
             shopping_list = shopping_list_service.get_shopping_list(user_id)
@@ -93,9 +97,9 @@ class ChatService:
                 'preferences': user_preferences
             }
 
-    def _process_shopping_list_updates(self, user_id: str, user_message: str, message_type: str, 
-                                     shopping_list_state: Optional[ShoppingListState]) -> None:
-        """Process shopping list updates with context awareness."""
+    def _process_shopping_list_updates_with_context(self, user_id: str, user_message: str, message_type: str, 
+                                                  shopping_list_state: Optional[ShoppingListState]) -> None:
+        """Process shopping list updates with intelligent decision making."""
         try:
             current_list = shopping_list_service.get_shopping_list(user_id)
             
@@ -106,41 +110,58 @@ class ChatService:
                 shopping_list_state
             )
             
-            # Process additions
+            # Process additions with intelligent decision making
             items_to_add = extraction_result.get("items_to_add", [])
             quantities = extraction_result.get("quantities", {})
             
             for item in items_to_add:
-                quantity = quantities.get(item, 1)
-                success = shopping_list_service.add_item_with_context(
-                    user_id, item, quantity, "ai_extraction"
-                )
-                if success:
-                    logger.info(f"Added item with context", user_id=user_id, item=item, quantity=quantity)
+                # Check if we should add this item
+                decision = context_manager.should_add_item(user_id, item)
+                
+                if decision["should_add"]:
+                    quantity = quantities.get(item, decision.get("quantity", 1))
+                    success = shopping_list_service.add_item_with_context(
+                        user_id, item, quantity, "ai_extraction"
+                    )
+                    if success:
+                        logger.info(f"Added item with context", user_id=user_id, item=item, quantity=quantity)
+                else:
+                    logger.info(f"Intelligent decision: not adding {item}", user_id=user_id, reason=decision["reason"])
+                    # Could add this to bot response for user feedback
             
-            # Process removals
+            # Process removals with intelligent decision making
             items_to_remove = extraction_result.get("items_to_remove", [])
             
             for item in items_to_remove:
-                success = shopping_list_service.remove_item_with_tracking(
-                    user_id, item, "user_request"
-                )
-                if success:
-                    logger.info(f"Removed item with tracking", user_id=user_id, item=item)
+                # Check if we should remove this item
+                decision = context_manager.should_remove_item(user_id, item)
+                
+                if decision["should_remove"]:
+                    success = shopping_list_service.remove_item_with_tracking(
+                        user_id, item, "user_request"
+                    )
+                    if success:
+                        logger.info(f"Removed item with tracking", user_id=user_id, item=item)
+                else:
+                    logger.info(f"Intelligent decision: not removing {item}", user_id=user_id, reason=decision["reason"])
             
-            # Handle special message types
+            # Handle special message types with fallback
             if message_type == "Item Addition type" and not items_to_add:
                 # Fallback to direct extraction for addition messages
                 ingredients = self._extract_items_from_message(user_message)
                 if ingredients:
                     for item in ingredients:
-                        shopping_list_service.add_item_with_context(user_id, item, 1, "direct_addition")
+                        decision = context_manager.should_add_item(user_id, item)
+                        if decision["should_add"]:
+                            shopping_list_service.add_item_with_context(user_id, item, 1, "direct_addition")
             
             elif message_type == "Update Cart type" and not items_to_remove:
                 # Fallback to AI removal extraction
                 removal_items = ai_service.extract_removal_items(user_message, current_list)
                 for item in removal_items:
-                    shopping_list_service.remove_item_with_tracking(user_id, item, "user_request")
+                    decision = context_manager.should_remove_item(user_id, item)
+                    if decision["should_remove"]:
+                        shopping_list_service.remove_item_with_tracking(user_id, item, "user_request")
             
         except Exception as e:
             logger.error("Error processing shopping list updates", user_id=user_id, error=str(e))
