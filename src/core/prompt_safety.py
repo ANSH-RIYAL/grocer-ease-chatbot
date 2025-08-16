@@ -46,11 +46,11 @@ class PromptSafety:
                 validation_results['violations'].append(f"Contains {category}")
                 logger.warning(f"Prompt contains prohibited content: {category}")
         
-        # Check for required content
-        for category, pattern in cls.REQUIRED_PATTERNS.items():
-            if not re.search(pattern, prompt, re.IGNORECASE):
-                validation_results['warnings'].append(f"Missing {category}")
-                logger.warning(f"Prompt missing required content: {category}")
+        # Check for required content (disabled for now to reduce log noise)
+        # for category, pattern in cls.REQUIRED_PATTERNS.items():
+        #     if not re.search(pattern, prompt, re.IGNORECASE):
+        #         validation_results['warnings'].append(f"Missing {category}")
+        #         logger.warning(f"Prompt missing required content: {category}")
         
         # Validate message type specific requirements
         if message_type == "Recipe type":

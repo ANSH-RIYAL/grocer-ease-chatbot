@@ -49,7 +49,7 @@ class MessageClassifier:
         4. Update Cart type - User wants to modify, remove, or delete items from their shopping list.
         5. Others - Any message that does not fit the above categories.
 
-        Classify the following message and return ONLY the category name:
+        Classify the following message and return ONLY the exact category name (including "type" suffix):
 
         Message: "{message}"
 

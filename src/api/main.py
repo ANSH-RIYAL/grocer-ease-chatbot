@@ -57,6 +57,10 @@ class SubstitutionRequest(BaseModel):
     user_id: str = Field(..., min_length=1, description="User ID")
     item: str = Field(..., min_length=1, description="Item to find substitutions for")
 
+class ShoppingListSyncRequest(BaseModel):
+    user_id: str = Field(..., min_length=1, description="User ID")
+    items: List[str] = Field(default_factory=list, description="Updated shopping list items (strings)")
+
 @app.post(f"{settings.API_V1_STR}/chat")
 async def chat(request: ChatRequest) -> Dict[str, Any]:
     """Handle chat requests and return bot response with shopping list."""
@@ -308,6 +312,36 @@ async def get_shopping_list_state(user_id: str) -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Error getting shopping list state for user {user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error"
+        )
+
+@app.get(f"{settings.API_V1_STR}/shopping-list/items/{{user_id}}")
+async def get_shopping_list_items(user_id: str) -> Dict[str, Any]:
+    """Get items-only shopping list for a user (strings only)."""
+    try:
+        items = shopping_list_service.get_shopping_list(user_id)
+        return {"user_id": user_id, "items": items}
+    except Exception as e:
+        logger.error(f"Error getting shopping list items for user {user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error"
+        )
+
+@app.put(f"{settings.API_V1_STR}/shopping-list/sync")
+async def sync_shopping_list(request: ShoppingListSyncRequest) -> Dict[str, Any]:
+    """Synchronize the user's shopping list with the provided items (frontend edit)."""
+    try:
+        result = shopping_list_service.sync_shopping_list(request.user_id, request.items)
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Sync failed"))
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error syncing shopping list for user {request.user_id}: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail="Internal server error"

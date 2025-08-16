@@ -125,6 +125,8 @@ class RecipeService:
             User preferences: {user_preferences.dietary} diet
             Allergies: {', '.join(user_preferences.allergies) if user_preferences.allergies else 'None'}
             
+            IMPORTANT: Generate a recipe that matches the user's specific request. If they ask for "butter chicken", create a butter chicken recipe. If they ask for "pasta", create a pasta recipe. Be specific to their request.
+            
             Return a JSON response with:
             {{
                 "recipe_name": "Name of the recipe",
@@ -134,25 +136,42 @@ class RecipeService:
                 "difficulty": "easy/medium/hard",
                 "dietary_info": "vegetarian/vegan/regular"
             }}
+            
+            Return ONLY valid JSON.
             """
             
             response = ai_service.model.generate_content(prompt)
             if not response or not response.text:
                 return {"error": "Failed to generate recipe"}
             
-            # Parse JSON response
+            # Parse JSON response with fallback
             import json
+            import re
+            
+            response_text = response.text.strip()
+            
             try:
-                recipe_data = json.loads(response.text.strip())
-                return {
-                    "suggestion": recipe_data,
-                    "missing_ingredients": recipe_data.get("ingredients", []),
-                    "reason": "AI-generated recipe based on your request",
-                    "alternatives": []
-                }
+                # Try direct JSON parsing first
+                recipe_data = json.loads(response_text)
             except json.JSONDecodeError:
-                logger.error("Failed to parse AI recipe response")
-                return {"error": "Failed to parse recipe response"}
+                # Try to extract JSON from the response using regex
+                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if json_match:
+                    try:
+                        recipe_data = json.loads(json_match.group())
+                    except json.JSONDecodeError:
+                        logger.error("Failed to parse AI recipe response")
+                        return {"error": "Failed to parse recipe response"}
+                else:
+                    logger.error("No JSON found in AI recipe response")
+                    return {"error": "Failed to parse recipe response"}
+            
+            return {
+                "suggestion": recipe_data,
+                "missing_ingredients": recipe_data.get("ingredients", []),
+                "reason": "AI-generated recipe based on your request",
+                "alternatives": []
+            }
                 
         except Exception as e:
             logger.error(f"Error generating AI recipe: {str(e)}")

@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional
 import google.generativeai as genai
 from tenacity import retry, stop_after_attempt, wait_exponential
 import json
+import re
 
 from src.core.config import settings
 from src.core.logging import get_logger
@@ -192,38 +193,44 @@ class AIService:
             context_text = "\n".join(context_parts) if context_parts else "No special context"
             
             prompt = f"""
-            Extract shopping list items from the user message with context awareness.
+            You are a shopping list assistant. Extract items from the user message with context awareness.
             
             Context:
             {context_text}
             
             Current shopping list: {', '.join(current_list)}
-            
             User message: "{user_message}"
             
             Instructions:
-            - Extract items mentioned for shopping
-            - Handle quantities (e.g., "2 apples" → {{"apples": 2}})
-            - Identify removals (e.g., "I don't want X" → remove X)
-            - Consider user preferences (e.g., nut allergy alternatives)
-            - Return JSON format with items_to_add, items_to_remove, quantities
+            - Extract items mentioned for shopping.
+            - IMPORTANT: Output item names as generic product names only (no quantities, sizes, units, or preparation words). Examples: "1 cup buttermilk" → "buttermilk", "2 cloves garlic, minced" → "garlic".
+            - If a removal intent is present, list removed items separately.
+            - Consider user preferences (e.g., allergies) and avoid proposing allergen items.
+            - Return ONLY valid JSON. Do not include any extra commentary or code fences.
             
-            Return JSON format:
+            JSON format:
             {{
                 "items_to_add": ["item1", "item2"],
                 "items_to_remove": ["item3"],
                 "quantities": {{"item1": 2, "item2": 1}},
                 "context": "recipe_shopping|direct_shopping|modification"
             }}
+            
+            JSON response only:
             """
             
             response = self.model.generate_content(prompt)
             if not response or not response.text:
+                logger.warning("Empty response from Gemini for item extraction")
                 return {"items_to_add": [], "items_to_remove": [], "quantities": {}, "context": "direct_shopping"}
             
-            # Parse JSON response
+            # Clean the response text
+            response_text = response.text.strip()
+            
+            # Try to parse JSON response
             try:
-                result = json.loads(response.text.strip())
+                # First try direct parsing
+                result = json.loads(response_text)
                 return {
                     "items_to_add": result.get("items_to_add", []),
                     "items_to_remove": result.get("items_to_remove", []),
@@ -231,8 +238,24 @@ class AIService:
                     "context": result.get("context", "direct_shopping")
                 }
             except json.JSONDecodeError:
-                logger.error("Failed to parse AI response as JSON")
-                return {"items_to_add": [], "items_to_remove": [], "quantities": {}, "context": "direct_shopping"}
+                # Try to find JSON object in the response
+                import re
+                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if json_match:
+                    try:
+                        result = json.loads(json_match.group())
+                        return {
+                            "items_to_add": result.get("items_to_add", []),
+                            "items_to_remove": result.get("items_to_remove", []),
+                            "quantities": result.get("quantities", {}),
+                            "context": result.get("context", "direct_shopping")
+                        }
+                    except json.JSONDecodeError:
+                        logger.error("Failed to parse JSON object from response")
+                        return {"items_to_add": [], "items_to_remove": [], "quantities": {}, "context": "direct_shopping"}
+                else:
+                    logger.error(f"Failed to parse AI response as JSON: {response_text}")
+                    return {"items_to_add": [], "items_to_remove": [], "quantities": {}, "context": "direct_shopping"}
                 
         except Exception as e:
             logger.error(f"Failed to extract items with context: {str(e)}")
@@ -242,30 +265,61 @@ class AIService:
         """Extract items to remove from user message."""
         try:
             prompt = f"""
-            Extract items that the user wants to remove from their shopping list.
+            You are a shopping list assistant. Extract items that the user wants to remove from their shopping list.
             
             Current shopping list: {', '.join(current_list)}
             User message: "{user_message}"
             
             Instructions:
-            - Identify items the user wants to remove
-            - Look for phrases like "remove", "don't want", "delete", "take off"
-            - Return only the item names as a JSON array
+            - Identify items the user wants to remove.
+            - Output item names as generic product names only (no quantities, sizes, units, or preparation words).
+            - Look for phrases like "remove", "don't want", "delete", "take off", "get rid of"
+            - Return ONLY a JSON array of item names
+            - If no items to remove, return empty array []
             
-            Return JSON format:
-            ["item1", "item2"]
+            IMPORTANT: Return ONLY valid JSON array, nothing else.
+            
+            Example responses:
+            - For "remove bread" → ["bread"]
+            - For "I don't want tomatoes" → ["tomatoes"]
+            - For "delete milk and eggs" → ["milk", "eggs"]
+            - For "add apples" → []
+            
+            JSON response:
             """
             
             response = self.model.generate_content(prompt)
             if not response or not response.text:
+                logger.warning("Empty response from Gemini for removal extraction")
                 return []
             
+            # Clean the response text
+            response_text = response.text.strip()
+            
+            # Try to extract JSON from the response
             try:
-                result = json.loads(response.text.strip())
-                return result if isinstance(result, list) else []
+                # First try direct parsing
+                result = json.loads(response_text)
+                if isinstance(result, list):
+                    return [item.strip() for item in result if item]
+                else:
+                    logger.warning(f"Expected list but got {type(result)}")
+                    return []
+                    
             except json.JSONDecodeError:
-                logger.error("Failed to parse removal response as JSON")
-                return []
+                # Try to find JSON array in the response
+                json_match = re.search(r'\[.*\]', response_text)
+                if json_match:
+                    try:
+                        result = json.loads(json_match.group())
+                        if isinstance(result, list):
+                            return [item.strip() for item in result if item]
+                    except json.JSONDecodeError:
+                        logger.error("Failed to parse JSON array from response")
+                        return []
+                else:
+                    logger.error(f"Failed to parse removal response as JSON: {response_text}")
+                    return []
                 
         except Exception as e:
             logger.error(f"Failed to extract removal items: {str(e)}")
